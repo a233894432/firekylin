@@ -55,7 +55,7 @@ export default class extends Base {
   handleTrigger(data, type){
     switch(type){
       case 'saveCateFail':
-        TipAction.fail(data);
+        TipAction.fail(data.message);
         this.setState({submitting: false});
         break;
       case 'saveCateSuccess':
@@ -96,7 +96,7 @@ export default class extends Base {
 
     //如果是在编辑状态下在没有拿到数据之前不做渲染
     //针对 react-bootstrap-validation 插件在 render 之后不更新 defaultValue 做的处理
-    if( this.id && !this.state.cateInfo.pathname ) {
+    if( this.id && !this.state.cateInfo.hasOwnProperty('pathname') ) {
       return null;
     }
 
@@ -116,9 +116,13 @@ export default class extends Base {
                 labelClassName="col-xs-1"
                 wrapperClassName="col-xs-4"
                 value={this.state.cateInfo.name}
-                onChange={val => {
-                  this.state.cateInfo.name = val;
+                validate="required"
+                onChange={e => {
+                  this.state.cateInfo.name = e.target.value;
                   this.forceUpdate();
+                }}
+                errorHelp={{
+                    required: '请填写分类名称'
                 }}
             />
             <ValidatedInput
@@ -128,8 +132,8 @@ export default class extends Base {
                 labelClassName="col-xs-1"
                 wrapperClassName="col-xs-4"
                 value={this.state.cateInfo.pathname}
-                onChange={val => {
-                  this.state.cateInfo.pathname = val;
+                onChange={e => {
+                  this.state.cateInfo.pathname = e.target.value;
                   this.forceUpdate();
                 }}
             />

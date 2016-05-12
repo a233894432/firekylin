@@ -1,8 +1,10 @@
 'use strict';
+
+import Base from './base';
 /**
  * relation model
  */
-export default class extends think.model.relation {
+export default class extends Base {
   /**
    * init
    * @param  {} args []
@@ -50,8 +52,10 @@ export default class extends think.model.relation {
     return this.where({id: data.id}).update(data);
   }
 
-  addPostCate(cate_ids) {
-
+  async deletePost(post_id) {
+    //await this.model('post_cate').delete({post_id});
+    //await this.model('post_tag').delete({post_id});
+    return this.where({id: post_id}).delete();
   }
 
   /**
@@ -77,5 +81,25 @@ export default class extends think.model.relation {
       type: 0, //文章
       status: 3 //已经发布
     }).limit(nums).setRelation(false).order('create_time DESC').select();
+  }
+
+  async afterUpdate(data, options) {
+    await super.afterUpdate(data, options);
+    return this.clearCache();
+  }
+
+  async afterDelete(data, options) {
+    await super.afterDelete(data, options);
+    return this.clearCache();
+  }
+
+  async afterAdd(data, options) {
+    await super.afterAdd(data, options);
+    return this.clearCache();
+  }
+
+  clearCache() {
+    think.log('clear cache');
+    return think.cache('post_1', null);
   }
 }

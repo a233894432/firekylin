@@ -44,6 +44,7 @@ export default class extends Base {
         break;
       case 'getUserInfo':
         this.setState({userInfo: data});
+        this.hasEmail = !!data.email;
         break;
     }
   }
@@ -66,6 +67,10 @@ export default class extends Base {
       values.id = this.id;
     }
     UserAction.save(values);
+  }
+
+  generateKey() {
+    UserAction.generateKey(this.id);
   }
   /**
    * handle invalid
@@ -98,8 +103,14 @@ export default class extends Base {
       value: this.state.userInfo[type] || '',
       onChange: this.changeInput.bind(this, type)
     };
-    if(this.id && ['name', 'email'].indexOf(type) > -1 && this.state.userInfo[type]){
-      prop.readOnly = true;
+    if(this.id && ['name', 'email'].indexOf(type) > -1){
+      if(type === 'email'){
+        if(this.hasEmail){
+          prop.readOnly = true;
+        }
+      }else{
+        prop.readOnly = true;
+      }
     }
 
     let validatePrefix = '';
@@ -238,6 +249,7 @@ export default class extends Base {
                 <select className="form-control" ref="type">
                   <option value="2" {...this.getOptionProp('type', '2')}>编辑</option>
                   <option value="1" {...this.getOptionProp('type', '1')}>管理员</option>
+                  <option value="3" {...this.getOptionProp('type', '3')}>投稿者</option>
                 </select>
               </div>
               <div className="form-group">
@@ -247,6 +259,27 @@ export default class extends Base {
                   <option value="2" {...this.getOptionProp('status', '2')}>禁用</option>
                 </select>
               </div>
+              <filedset>
+                <legend>
+                  认证
+                  <button
+                      type="button"
+                      className="btn btn-primary"
+                      style={{marginLeft: 15, marginBottom: 5, padding: '3px 5px'}}
+                      onClick={this.generateKey.bind(this)}
+                  >重新生成</button>
+                </legend>
+                <div className="form-group">
+                  <label>App Key</label>
+                  <div>
+                    <input type="text" className="form-control" disabled={true} value={this.state.userInfo.app_key} />
+                  </div>
+                </div>
+                <div className="form-group">
+                  <label>App Secret</label>
+                  <input type="text" className="form-control" disabled={true} value={this.state.userInfo.app_secret} />
+                </div>
+              </filedset>
             </div>
           </Form>
         </div>

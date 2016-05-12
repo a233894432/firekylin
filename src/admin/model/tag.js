@@ -1,8 +1,10 @@
 'use strict';
+
+import Base from './base';
 /**
  * relation model
  */
-export default class extends think.model.relation {
+export default class extends Base {
   /**
    * init
    * @param  {} args []
@@ -14,13 +16,20 @@ export default class extends think.model.relation {
     this.relation = {
       post_tag: {
         type: think.model.HAS_MANY,
-        fkey: 'tag_id'
+        fKey: 'tag_id'
       }
     }
   }
 
   addTag(data){
-    return this.where({name: data.name}).thenAdd(data);
+    let where = {
+      name: data.name,
+      _logic: 'OR'
+    };
+    if(data.pathname){
+      where.pathname = data.pathname;
+    }
+    return this.where(where).thenAdd(data);
   }
 
   async saveTag(data){
@@ -30,5 +39,10 @@ export default class extends think.model.relation {
     }
 
     return this.where({id: data.id}).update(data);
+  }
+
+  async deleteTag(tag_id) {
+    this.model('post_tag').where({tag_id}).delete();
+    return this.where({id: tag_id}).delete();
   }
 }

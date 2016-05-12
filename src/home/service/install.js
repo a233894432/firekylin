@@ -34,7 +34,7 @@ export default class extends think.service.base {
     }, module)
   }
   /**
-   * 
+   *
    * @return {[type]} [description]
    */
   checkDbInfo(){
@@ -51,39 +51,60 @@ export default class extends think.service.base {
     let model = this.getModel(true);
     let dbExist = await model.query("SELECT `TABLE_NAME` FROM `INFORMATION_SCHEMA`.`TABLES` WHERE `TABLE_SCHEMA`='" + this.dbConfig.database + "'");
     if(think.isEmpty(dbExist)){
-      await model.query('DROP DATABASE IF EXISTS `' + this.dbConfig.database + '`');
-      await model.query('CREATE DATABASE `' + this.dbConfig.database + '`');
-      model.close();
+      //忽略错误
+      await model.query('CREATE DATABASE `' + this.dbConfig.database + '`').catch(() => {});
+      //model.close();
     }
     let dbFile = think.ROOT_PATH + think.sep + 'firekylin.sql';
     if(!think.isFile(dbFile)){
       return Promise.reject('数据库文件（firekylin.sql）不存在，请重新下载');
     }
-    let content = fs.readFileSync(dbFile, 'utf8');
-    content = content.replace(/\#[^\n]*/g, '').replace(/\/\*.*?\*\//g, '').replace(/\n/g, ' ');
-    content = content.replace(/fk_/g, this.dbConfig.prefix || '');
 
+
+    let content = fs.readFileSync(dbFile, 'utf8');
+    content = content.split('\n').filter(item => {
+      item = item.trim();
+      let ignoreList = ['#', 'LOCK', 'UNLOCK'];
+      for(let it of ignoreList){
+        if(item.indexOf(it) === 0){
+          return false;
+        }
+      }
+      return true;
+    }).join(' ');
+    content = content.replace(/\/\*.*?\*\//g, '').replace(/fk_/g, this.dbConfig.prefix || '');
+
+
+    //导入数据
     model = this.getModel();
-    await model.transaction(async () => {
-      content = content.split(';');
+    content = content.split(';');
+    try{
       for(let item of content){
         item = item.trim();
         if(item){
+          think.log(item);
           await model.query(item);
         }
       }
-    }).catch(error => {
-      think.log(error);
-      return Promise.reject('导入数据失败，请重试');
-    });
+    }catch(e){
+      think.log(e);
+      return Promise.reject('数据表导入失败，请在控制台下查看具体的错误信息，并在 GitHub 上发 issue。');
+    }
 
+    think.log('before clear data');
+
+
+    //清除已有的数据内容
     let promises = ['cate', 'post', 'post_cate', 'post_tag', 'tag', 'user'].map(item => {
-      return this.getModel(item).where('1=1').delete();
+      let modelInstance = this.getModel(item);
+      if( modelInstance ) {
+        modelInstance.where('1=1').delete();
+      }
     });
     await Promise.all(promises);
 
-    let optionsModel = this.getModel('options');
 
+    let optionsModel = this.getModel('options');
     await optionsModel.where('1=1').update({value: ''});
     let salt = think.uuid(10) + '!@#$%^&*';
     this.password_salt = salt;
@@ -91,6 +112,9 @@ export default class extends think.service.base {
     await optionsModel.where({key: 'password_salt'}).update({value: salt});
     await optionsModel.where({key: 'title'}).update({value: 'FireKylin 系统'});
     await optionsModel.where({key: 'logo_url'}).update({value: '/static/img/firekylin.jpg'});
+    await optionsModel.where({key: 'theme'}).update({value: 'firekylin'});
+
+    //optionsModel.close();
   }
   /**
    * update config
@@ -110,7 +134,7 @@ export default class extends think.service.base {
     `;
     let dbConfigFile = think.APP_PATH + '/common/config/db.js';
     fs.writeFileSync(dbConfigFile, content);
-    think.config('db', data.default);
+    think.config('db', data);
   }
   /**
    * create account
@@ -129,7 +153,8 @@ export default class extends think.service.base {
       status: 1,
       ip: this.ip
     }
-    return model.addUser(data);
+    await model.addUser(data);
+    //model.close();
   }
   /**
    * run
@@ -141,7 +166,8 @@ export default class extends think.service.base {
     await this.createAccount();
     this.updateConfig();
     firekylin.setInstalled();
-    await this.getModel('options').getOptions(true);
-    let  options = await this.getModel('options').getOptions();
+    let optionsModel = this.getModel('options');
+    await optionsModel.getOptions(true);
+    //optionsModel.close();
   }
 }

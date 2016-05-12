@@ -1,8 +1,10 @@
 'use strict';
+
+import Base from './base';
 /**
  * relation model
  */
-export default class extends think.model.relation {
+export default class extends Base {
   /**
    * init
    * @param  {} args []
@@ -14,7 +16,7 @@ export default class extends think.model.relation {
     this.relation = {
       post_cate: {
         type: think.model.HAS_MANY,
-        fkey: 'cate_id'
+        fKey: 'cate_id'
       }
     }
   }
@@ -25,7 +27,14 @@ export default class extends think.model.relation {
    * @param {[type]} ip   [description]
    */
   addCate(data){
-    return this.where({name: data.pathname, _logic: 'OR'}).thenAdd(data);
+    let where = {
+      name: data.name,
+      _logic: 'OR'
+    };
+    if(data.pathname){
+      where.pathname = data.pathname;
+    }
+    return this.where(where).thenAdd(data);
   }
 
   async saveCate(data){
@@ -37,6 +46,10 @@ export default class extends think.model.relation {
     return this.where({id: data.id}).update(data);
   }
 
+  async deleteCate(cate_id) {
+    this.model('post_cate').where({cate_id}).delete();
+    return this.where({id: cate_id}).delete();
+  }
   /**
    * get count posts
    * @param  {Number} userId []
@@ -47,13 +60,5 @@ export default class extends think.model.relation {
       return this.where({user_id: userId}).count();
     }
     return this.count();
-  }
-  /**
-   * get latest posts
-   * @param  {Number} nums []
-   * @return {}      []
-   */
-  getLatest(nums = 5){
-    return this.order('id DESC').limit(nums).setRelation(false).select();
   }
 }

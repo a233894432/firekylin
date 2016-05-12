@@ -18,10 +18,12 @@ export default class extends think.service.base {
     let optionsModel = this.model('options');
     let options = await optionsModel.getOptions();
     let comment = options.comment;
-    if(comment.type === 'disqus'){
-      return this.syncFromDisqus(comment);
-    }else if(comment.type === 'duoshuo'){
-      return this.syncFromDuoshuo(comment);
+    if(comment.name){
+      if(comment.type === 'disqus'){
+        return this.syncFromDisqus(comment);
+      }else if(comment.type === 'duoshuo'){
+        return this.syncFromDuoshuo(comment);
+      }
     }
   }
   /**
@@ -49,27 +51,39 @@ export default class extends think.service.base {
     if(think.isEmpty(postData)){
       return;
     }
-    let threads = Object.keys(postData).join('&l=');
-    let url = `https://${comment.name}.disqus.com/count-data.js?1=${threads}`;
-    think.log(`sync comments from ${url}`);
-    let fn = think.promisify(request, request);
-    let response = await fn(url);
-    let data = response.body.match(/DISQUSWIDGETS.displayCount\(([^\(\)]+)\);/);
-    if(!data){
-      return;
-    }
-
-    data = JSON.parse(data[1]).counts;
-    let promises = [];
-    data.forEach(item => {
-      if(item.comments === postData[item.id].comment_num){
+    let threads = Object.keys(postData); //.join('&l=')
+    let index = 0;
+    while(true){
+      let ths = threads.slice(index, index + 10);
+      index += 10;
+      if(!ths.length){
         return;
       }
-      let id = postData[item.id].id;
-      let promise = this.model('post').where({id: id}).update({comment_num: item.comments});
-      promises.push(promise);
-    })
-    return Promise.all(promises);
+      let url = `https://${comment.name}.disqus.com/count-data.js?1=${ths.join('&l=')}`;
+      //think.log(`sync comments ${url}`);
+      let fn = think.promisify(request, request);
+      let response = await fn(url).catch(() => {});
+      if(!response){
+        continue;
+      }
+      let data = response.body.match(/DISQUSWIDGETS.displayCount\(([^\(\)]+)\);/);
+      if(!data){
+        continue;
+      }
+
+      data = JSON.parse(data[1]).counts;
+      let promises = data.map(item => {
+        if(item.comments === postData[item.id].comment_num){
+          return;
+        }
+        let id = postData[item.id].id;
+        return this.model('post').where({id: id}).update({comment_num: item.comments});
+      });
+      await Promise.all(promises);
+      if(promises.length){
+        await this.clearPostCache();
+      }
+    }
   }
   /**
    * sync from duoshuo
@@ -80,21 +94,35 @@ export default class extends think.service.base {
     if(think.isEmpty(postData)){
       return;
     }
-    let threads = Object.keys(postData).join(',');
-    let url = `http://api.duoshuo.com/threads/counts.json?short_name=${comment.name}&threads=${threads}`;
-    think.log(`sync comments from ${url}`);
-    let fn = think.promisify(request, request);
-    let response = await fn(url);
-    let data = JSON.parse(response.body).response;
-    let promises = [];
-    for(let key in data){
-      if(data[key].comments === postData[key].comment_num){
-        continue;
+    let threads = Object.keys(postData);
+    let index = 0;
+    while(true){
+      let ths = threads.slice(index, index + 10);
+      index += 10;
+      if(!ths.length){
+        return;
       }
-      let id = postData[key].id;
-      let promise = this.model('post').where({id: id}).update({comment_num: data[key].comments});
-      promises.push(promise);
+      let url = `http://api.duoshuo.com/threads/counts.json?short_name=${comment.name}&threads=${ths.join(',')}`;
+      //think.log(`sync comments ${url}`);
+      let fn = think.promisify(request, request);
+      let response = await fn(url);
+      let data = JSON.parse(response.body).response;
+      let promises = [];
+      for(let key in data){
+        if(data[key].comments === postData[key].comment_num){
+          continue;
+        }
+        let id = postData[key].id;
+        let promise = this.model('post').where({id: id}).update({comment_num: data[key].comments});
+        promises.push(promise);
+      }
+      await Promise.all(promises);
+      if(promises.length){
+        await this.clearPostCache();
+      }
     }
-    return Promise.all(promises);
+  }
+  clearPostCache(){
+    return think.cache('post_1', null);
   }
 }

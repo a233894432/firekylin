@@ -48,7 +48,7 @@ export default class extends Base {
           </div>
           <hr />
           <div className="row">
-            <div className="col-md-4">
+            <div className="col-md-5">
               <h4>最近发布的文章</h4>
               <ul>
                 {this.state.posts.map(post =>
@@ -59,7 +59,7 @@ export default class extends Base {
                 )}
               </ul>
             </div>
-            <div className="col-md-4">
+            <div className="col-md-3">
               <h4>系统概况</h4>
               <ul>
                 <li><label>服务器系统：</label>{this.state.platform}</li>
@@ -79,11 +79,11 @@ export default class extends Base {
                 </li>
                 <li>
                   <label>项目源码：</label>
-                  <a href="https://github.com/welefen/firekylin">https://github.com/welefen/firekylin</a>
+                  <a href="https://github.com/75team/firekylin">https://github.com/75team/firekylin</a>
                 </li>
                 <li>
                   <label>问题反馈：</label>
-                  <a href="https://github.com/welefen/firekylin/issues">https://github.com/welefen/firekylin/issues</a>
+                  <a href="https://github.com/75team/firekylin/issues">https://github.com/75team/firekylin/issues</a>
                 </li>
                 <li>
                   <label>团队博客：</label>
@@ -91,7 +91,7 @@ export default class extends Base {
                 </li>
                 <li>
                   <label>开发成员：</label>
-                  <a href="https://github.com/welefen">Welefen</a>、<a href="https://github.com/lizheming">lizheming</a>
+                  <a href="https://github.com/welefen">welefen</a>、<a href="https://github.com/lizheming">lizheming</a>、<a href="https://github.com/songguangyu">songguangyu</a>、<a href="https://github.com/showzyl">showzyl</a>
                 </li>
               </ul>
             </div>

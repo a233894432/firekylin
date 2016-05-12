@@ -21,6 +21,8 @@ import TagStore from 'admin/store/tag';
 import TipAction from 'common/action/tip';
 import firekylin from 'common/util/firekylin';
 import ModalAction from 'common/action/modal';
+import PushStore from 'admin/store/push';
+import PushAction from 'admin/action/push';
 import './style.css';
 
 export default class extends Base {
@@ -35,12 +37,16 @@ export default class extends Base {
         tag: [],
         cate: [],
         is_public: '1',
-        create_time: moment().format('YYYY-MM-DD HH:mm:ss'),
-        allow_comment: true
+        create_time: '',
+        allow_comment: true,
+        options: {
+          push_sites: []
+        }
       },
       status: 3,
       cateList: [],
-      tagList: []
+      tagList: [],
+      push_sites: []
     });
   }
   constructor(props){
@@ -54,6 +60,8 @@ export default class extends Base {
 
   componentWillMount() {
     this.listenTo(PostStore, this.handleTrigger.bind(this));
+    this.listenTo(PushStore, this.pushHandleTrigger.bind(this));
+
     this.listenTo(CateStore, cateList => {
       let list = cateList.filter(cate => cate.pid === 0);
       for(let i=0,l=list.length; i<l; i++) {
@@ -69,6 +77,15 @@ export default class extends Base {
     TagAction.select();
     if(this.id){
       PostAction.select(this.id);
+    }
+
+    PushAction.select();
+  }
+  pushHandleTrigger(data, type){
+    switch(type){
+      case 'getPushList':
+        this.setState({push_sites: data});
+        break;
     }
   }
   componentWillReceiveProps(nextProps) {
@@ -98,9 +115,16 @@ export default class extends Base {
         setTimeout(() => this.redirect('post/list'), 1000);
         break;
       case 'getPostInfo':
-        data.create_time = moment( new Date(data.create_time) ).format('YYYY-MM-DD HH:mm:ss');
+        if(data.create_time === '0000-00-00 00:00:00'){
+          data.create_time = '';
+        }
+        data.push_sites = [];
+        data.create_time = data.create_time ? moment( new Date(data.create_time) ).format('YYYY-MM-DD HH:mm:ss') : data.create_time;
         data.tag = data.tag.map(tag => tag.name);
         data.cate.forEach(item => this.cate[item.id] = true);
+        if(!data.options.push_sites){
+          data.options.push_sites = [];
+        }
         this.setState({postInfo: data});
         break;
     }
@@ -120,6 +144,14 @@ export default class extends Base {
       values.id = this.id;
     }
 
+    /** 草稿不存创建时间，其它的状态则默认时间为当前时间 **/
+    values.create_time = this.state.postInfo.create_time;
+    // if( this.state.status === 0 ) {
+    //   values.create_time = '';
+    // } else {
+    //   values.create_time = this.state.postInfo.create_time || moment().format('YYYY-MM-DD HH:mm:ss');
+    // }
+
     values.status = this.state.status;
     values.markdown_content = this.state.postInfo.markdown_content;
     if( values.status === 3 && !values.markdown_content ) {
@@ -128,9 +160,11 @@ export default class extends Base {
     }
 
     values.type = this.type; //type: 0为文章，1为页面
-    values.allow_comment = this.state.postInfo.allow_comment;
+    values.allow_comment = Number(this.state.postInfo.allow_comment);
+    values.push_sites = this.state.postInfo.push_sites;
     values.cate = Object.keys(this.cate).filter(item => this.cate[item]);
     values.tag = this.state.postInfo.tag;
+    values.options = JSON.stringify(this.state.postInfo.options);
     PostAction.save(values);
   }
   /**
@@ -145,7 +179,7 @@ export default class extends Base {
 
     //如果是在编辑状态下在没有拿到数据之前不做渲染
     //针对 react-bootstrap-validation 插件在 render 之后不更新 defaultValue 做的处理
-    if( this.id && !this.state.postInfo.content ) {
+    if( this.id && !this.state.postInfo.title ) {
       return null;
     }
 
@@ -209,6 +243,7 @@ export default class extends Base {
                     onFullScreen={isFullScreen => this.setState({isFullScreen})}
                     info = {{id: this.id,type: this.type}}
                   />
+                  <p style={{lineHeight: '30px'}}>文章使用 markdown 格式，格式说明请见<a href="https://guides.github.com/features/mastering-markdown/" target="_blank">这里</a></p>
                 </div>
               </div>
               <div className={classnames('col-xs-3')}>
@@ -261,7 +296,7 @@ export default class extends Base {
                                 this.forceUpdate();
                               }}
                           />
-                          {cate.name}
+                          <span style={{fontWeight: 'normal'}}>{cate.name}</span>
                         </label>
                       </li>
                     )}
@@ -289,7 +324,7 @@ export default class extends Base {
                 <RadioGroup
                   name="is_public"
                   label="公开度"
-                  wrapperClassName="col-xs-12"
+                  wrapperClassName="col-xs-12 is-public-radiogroup"
                 >
                   <Radio value="1" label="公开" />
                   <Radio value="0" label="不公开" />
@@ -311,6 +346,35 @@ export default class extends Base {
                     </label>
                   </div>
                 </div>
+                {this.state.push_sites.length > 0 ?
+                <div className="form-group">
+                  <label className="control-label">文章推送</label>
+                  <ul>
+                    {this.state.push_sites.map((site, i) =>
+                      <li key={i}>
+                        <label>
+                          <input
+                              type="checkbox"
+                              name="push_sites"
+                              value={site.appKey}
+                              checked={this.state.postInfo.options.push_sites.indexOf(site.appKey) > -1}
+                              onChange={()=>{
+                                let push_sites = this.state.postInfo.options.push_sites;
+                                if( push_sites.indexOf(site.appKey) > -1 ) {
+                                  this.state.postInfo.options.push_sites = push_sites.filter(appKey => appKey != site.appKey);
+                                } else {
+                                  this.state.postInfo.options.push_sites.push(site.appKey);
+                                }
+                                this.forceUpdate();
+                              }}
+                          />
+                        <span style={{fontWeight: 'normal'}}>{site.title}</span>
+                        </label>
+                      </li>
+                    )}
+                  </ul>
+                </div>
+                : null}
               </div>
             </div>
           </Form>

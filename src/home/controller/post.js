@@ -32,6 +32,7 @@ export default class extends Base {
    * @return {[type]} [description]
    */
   async detailAction(){
+    this.http.url = decodeURIComponent(this.http.url);
     let pathname = this.get('pathname');
     let detail = await this.model('post').getPostDetail(pathname);
     if(think.isEmpty(detail)){
@@ -92,18 +93,5 @@ export default class extends Base {
 
     this.assign('keyword', keyword);
     return this.displayView('search');
-  }
-  /**
-   * rss
-   * @return {[type]} [description]
-   */
-  async rssAction(){
-    let model = this.model('post');
-    let list = await model.getPostRssList();
-    this.assign('list', list);
-    this.assign('currentTime', (new Date()).toString());
-    
-    this.type('text/xml');
-    return super.display(this.HOME_VIEW_PATH + 'rss.xml');
   }
 }

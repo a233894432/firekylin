@@ -10,14 +10,14 @@
         <div class="meta">
             <div class="date">{{think.datetime(detail.create_time, 'MM月DD, YYYY')}}</div>
             <div class="comment">
-                <a href="">{{detail.comment_num}} comments</a>
+                <a href="#comments">{{detail.comment_num}} comments</a>
             </div>
         </div>
         <h1 class="title">{{detail.title}}</h1>
         <div class="entry-content">
             {{detail.content | safe}}
         </div>
-        <p>本文链接：<a href="{{protocol + http.host + http.url | safe}}">{{protocol + http.host + http.url | safe}}</a></p>
+        <p>本文链接：<a href="{{site_url + http.url | safe}}">{{site_url + http.url | safe}}</a></p>
         <p>-- <acronym title="End of File">EOF</acronym> --</p>
 
         <div class="post-info">

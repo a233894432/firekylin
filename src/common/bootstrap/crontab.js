@@ -1,21 +1,17 @@
 import crontab from 'node-crontab';
 
-import './crontab';
+import './global';
 
 if(!think.cli){
 
-  crontab.scheduleJob("0 */3 * * *", () => {
-    if(!firekylin.isInstalled){
-      return;
-    }
-    think.http("/crontab/sitemap", true); 
-  });
-
-  crontab.scheduleJob("0 */1 * * *", () => {
+  let syncComment = () => {
     if(!firekylin.isInstalled){
       return;
     }
     think.http("/crontab/sync_comment", true); 
-  });
-
+  }
+  crontab.scheduleJob("0 */1 * * *", () => syncComment);
+  
+  //服务启动时同步一次
+  syncComment();
 }

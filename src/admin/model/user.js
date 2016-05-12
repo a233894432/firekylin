@@ -1,10 +1,11 @@
 'use strict';
 
 import {PasswordHash} from 'phpass';
+import Base from './base';
 /**
  * model
  */
-export default class extends think.model.base {
+export default class extends Base {
 
   /**
    * get password
@@ -27,6 +28,13 @@ export default class extends think.model.base {
     let passwordHash = new PasswordHash();
     return passwordHash.checkPassword(password, userInfo.password);
   }
+
+  generateKey(userId, app_key, app_secret, status) {
+    let data = {app_key, app_secret};
+    if(status) { data.status = status; }
+    this.where({id: userId}).update(data);
+  }
+
   /**
    * after select
    * @param  {[type]} data [description]
@@ -53,7 +61,7 @@ export default class extends think.model.base {
    */
   addUser(data, ip){
     let create_time = think.datetime();
-    let encryptPassword = this.getEncryptPassword(data.password); 
+    let encryptPassword = this.getEncryptPassword(data.password);
     return this.where({name: data.username, email: data.email, _logic: 'OR'}).thenAdd({
       name: data.username,
       email: data.email,
@@ -92,6 +100,12 @@ export default class extends think.model.base {
     }
     if(think.isEmpty(updateData)){
       return Promise.reject('DATA_EMPTY');
+    }
+    if(!info.email && data.email){
+      let count = await this.where({email: data.email}).count('email');
+      if(!count){
+        updateData.email = data.email;
+      }
     }
     updateData.last_login_time = think.datetime();
     updateData.last_login_ip = ip;

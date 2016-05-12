@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom';
 import Base from 'base';
 import {Link} from 'react-router';
 import classnames from 'classnames';
-import { Form, ValidatedInput } from 'react-bootstrap-validation';
+import { Form, ValidatedInput, Radio, RadioGroup } from 'react-bootstrap-validation';
 import md5 from 'md5';
 import firekylin from 'common/util/firekylin';
 
@@ -18,6 +18,14 @@ export default class extends Base {
     this.state = {
       submitting: false,
       options: SysConfig.options
+    };
+    if(!this.state.options.hasOwnProperty('push')) {
+      this.state.options.push = '0';
+    }
+    this.state.options.analyze_code = unescape(SysConfig.options.analyze_code);
+    //网站地址
+    if(!this.state.options.site_url){
+      this.state.options.site_url = location.protocol + '//' + location.host;
     }
   }
   componentDidMount(){
@@ -119,8 +127,7 @@ export default class extends Base {
                             this.state.options.logo_url = res.data;
                             this.state.logo_uploading = false;
                             this.forceUpdate();
-                          },
-                          console.log
+                          }
                         );
 
                       });
@@ -138,6 +145,19 @@ export default class extends Base {
                 className="form-control"
                 errorHelp={{
                   required: '请填写站点描述'
+                }}
+              />
+            </div>
+            <div className="form-group">
+              <label>网站地址</label>
+              <ValidatedInput
+                type="text"
+                name="site_url"
+                {...this.getProps('site_url')}
+                ref="site_url"
+                className="form-control"
+                errorHelp={{
+                  required: '请填写网站地址'
                 }}
               />
             </div>
@@ -171,11 +191,10 @@ export default class extends Base {
                         form.append('name', 'favicon');
                         firekylin.upload(form).then(
                           res => {
-                            this.state.options.logo_url = res.data;
+                            this.state.options.favicon_url = res.data;
                             this.state.favicon_uploading = false;
                             this.forceUpdate();
-                          },
-                          console.log
+                          }
                         );
 
                       });
@@ -227,17 +246,7 @@ export default class extends Base {
                 className="form-control"
               />
             </div>
-            <div className="form-group">
-              <label>网站统计代码</label>
-              <ValidatedInput
-                  type="textarea"
-                  name="analyze_code"
-                  {...this.getProps('analyze_code')}
-                  ref="analyze_code"
-                  className="form-control"
-                  style={{height: 150}}
-              />
-            </div>
+
             <button type="submit" {...BtnProps} className="btn btn-primary">{this.state.submitting ? '提交中...' : '提交'}</button>
           </Form>
         </div>

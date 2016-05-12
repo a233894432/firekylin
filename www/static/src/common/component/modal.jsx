@@ -106,14 +106,8 @@ export default class extends Base {
 
   getAlert(){
     return (
-      <div className="dialog-alert anim-modal">
-        <h2 className="title">{this.data.title}</h2>
-        <div className="dialog-content">
-            {this.data.content}
-        </div>
-        <div className="btn-box">
-            <a href="###" onClick={this.close} className="btn-cancel">关闭</a>
-        </div>
+      <div>
+        {this.data.content}
       </div>
     );
   }
@@ -142,6 +136,12 @@ export default class extends Base {
     event.preventDefault();
     return this.btnClick(this.data.callback);
   }
+  confirmCancel(event){
+   if(this.data.cancelCallback) {
+     this.data.cancelCallback();
+   }
+   this.close(event);
+  }
   /**
    * confirm components
    * @return {[type]} [description]
@@ -159,9 +159,15 @@ export default class extends Base {
   }
 
   getButtons(){
+
+    if(this.data.type === 'alert'){
+      return (<div className="modal-footer">
+        <button type="button" onClick={this.confirmCancel.bind(this)} className="btn btn-default" data-dismiss="modal">关闭</button>
+      </div>);
+    }
     if(this.data.type === 'confirm'){
       return (<div className="modal-footer">
-        <button type="button" onClick={this.close.bind(this)} className="btn btn-default" data-dismiss="modal">取消</button>
+        <button type="button" onClick={this.confirmCancel.bind(this)} className="btn btn-default" data-dismiss="modal">取消</button>
         <button type="button" onClick={this.confirm.bind(this)} className="btn btn-primary">确定</button>
       </div>);
     }

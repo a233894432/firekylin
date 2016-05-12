@@ -23,8 +23,11 @@ export default Reflux.createStore({
       data => this.trigger(data, id ? 'getPostInfo' : 'getPostList')
     );
   },
-  onSelectList(page) {
-    return firekylin.request( superagent.get('/admin/api/post?page='+page) ).then(
+  onSelectList(page, status, keyword) {
+    let url = `/admin/api/post?page=${page}`;
+    if(status) { url += `&status=${status}` };
+    if(keyword) { url += `&keyword=${keyword}`};
+    return firekylin.request( superagent.get(url) ).then(
       data => this.trigger(data, 'getPostList')
     );
   },
@@ -65,6 +68,24 @@ export default Reflux.createStore({
       data => this.trigger(data, 'deletePostSuccess'),
       err => this.trigger(err, 'deletePostFail')
     );
+  },
+
+  onPass(id) {
+    this.onSave({id, status: 3});
+  },
+
+  onDeny(id) {
+    this.onSave({id, status: 2});
+  },
+
+  onSearch(data) {
+    let url = '/admin/api/search';
+    let req = superagent.post(url);
+    req.type('form').send(data);
+    return firekylin.request(req).then((data)=>{
+      //PostAction.search.completed(data);
+      this.trigger(data, 'search')
+    });
   }
 
 })

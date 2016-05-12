@@ -2,15 +2,33 @@
 
 A Simple & Fast Node Bloging Platform Base On ThinkJS 2.0 & ReactJS & ES2015+
 
+使用 FireKylin 构建的博客系统（排名不分先后）：
+
+* http://www.75team.com/ - 奇舞团博客
+* http://blog.h5jun.com/ - 月影的博客
+* http://gyblog.cn/ - 光宇的博客
+* http://welefen.com/ - welefen 的博客
+* https://haozi.me/ - 耗子么
+* https://imjiangtao.com - 江涛的博客
+* http://aztack.wang/ - Aztack's blog
+* https://blog.cosli.top/ - 且等风来
+* http://lisongfeng.cn - 为之漫笔
+
+如果你的博客也是用 FireKylin 构建的，请到 https://github.com/75team/firekylin/issues/34 提交网址。
+
 ## 安装
 
-[下载最新的安装包](https://github.com/75team/firekylin/tree/master/build)
-
-选择最新的安装包，点击打开，然后点击右上角的 Raw，下载安装包。
+[下载最新的安装包 - v0.10.0](https://raw.githubusercontent.com/75team/firekylin/master/build/firekylin_0.10.0.tar.gz)
 
 ## 安装依赖
 
 解压安装包，执行 `npm install` 安装对应的依赖（执行之前请确认已有 Node.js 环境，Node.js 版本要大于 4.0）。
+
+## 修改端口
+
+默认 Firekylin 用的端口是 `8360`，如果该端口已经被占用或者不想使用该端口，那么可以在项目目录下新建文件 `port` （是的，这个文件没有后缀名），文件内容为端口号。如：
+
+设置文件 `port` 的内容为 `9999`，表示设置的端口为 `9999`。
 
 ## 启动服务
 
@@ -36,17 +54,11 @@ sudo ln -s path/to/nginx.conf /usr/local/nginx/conf/include/www.example.com.conf
 
 需要将 `path.to` 改为当前的项目路径， `www.example.com` 改为对应的域名。
 
-## 修改端口
-
-默认 Firekylin 用的端口是 `8360`，如果该端口已经被占用或者不想使用该端口，那么可以在项目目录下新建文件 `port`，文件内容为端口号。如：
-
-设置文件 `port` 的内容为 `9999`，表示设置的端口为 `9999`。
-
-修改端口后需要重启 Node.js 服务，可以通过 `pm2 restart pm2.json` 来重启。
-
 ## 升级
 
-下载最新的安装包，解压覆盖原有的目录即可。
+下载最新的安装包，解压覆盖原有的目录，然后通过 `pm2 restart pm2.json` 重启服务。
+
+部分版本升级可能需要更新数据表，具体请见[这里](https://github.com/75team/firekylin/wiki/%E7%89%88%E6%9C%AC%E5%8D%87%E7%BA%A7)。
 
 ## 贡献代码
 

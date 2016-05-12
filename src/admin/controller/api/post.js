@@ -1,8 +1,9 @@
 'use strict';
-
-import Base from './base.js';
 import marked from "marked";
+import Base from './base.js';
+import request from 'request';
 import markToc from "marked-toc";
+import {PasswordHash} from 'phpass';
 import highlight from 'highlight.js';
 
 export default class extends Base {
@@ -15,15 +16,40 @@ export default class extends Base {
     // this.modelInstance.field('id,user_id,type,status,title,pathname,create_time,update_time');
     let data;
     if( this.id ) {
-      if( this.id === 'lastest' ) return this.lastest();
+      if( this.id === 'lastest' ) {
+        return this.lastest();
+      }
       data = await this.modelInstance.where({id: this.id}).find();
+      //文章选项
+      if(data.options){
+        data.options = JSON.parse(data.options) || {};
+      }else{
+        data.options = {};
+      }
     } else {
       let where = {};
       //不是管理员，只显示个人的文章
       if(this.userInfo.type !== 1){
         where.user_id = this.userInfo.id;
       }
-      data = await this.modelInstance.where(where).order('create_time DESC').page( this.get('page'), 15 ).countSelect();
+
+      if(this.get('status')) {
+        where.status = this.get('status');
+      }
+
+      if(this.get('keyword')) {
+        let keywords = this.get('keyword').split(/\s+/g);
+        if( keywords.indexOf(':public') > -1 || keywords.indexOf(':private') > -1 ) {
+          where.is_public = Number(keywords.indexOf(':public') > -1);
+          keywords = keywords.filter(word => word !== ':public' && word !== ':private');
+        }
+        if(keywords.length > 0) {
+          where.title = ["like", keywords.map(word => `%${word}%`)];
+        }
+      }
+
+      let field = ['id', 'title', 'user_id', 'create_time', 'update_time', 'status', 'pathname'];
+      data = await this.modelInstance.where(where).field(field).order('id DESC').page( this.get('page'), 15 ).countSelect();
     }
     return this.success(data);
   }
@@ -43,10 +69,18 @@ export default class extends Base {
       return this.fail('PATHNAME_EXIST');
     }
 
-    data.user_id = this.userInfo.id;
-    data = this.getContentAndSummary(data);
-    data = this.getPostTime(data);
+    /** 如果是编辑发布文章的话默认状态改为审核中 **/
+    if( data.status == 3 && this.userInfo.type == 2 ) {
+      data.status = 1;
+    }
+
+    /** 推送文章 **/
+    this.pushPost(data);
+
     data.tag = await this.getTagIds(data.tag);
+    data = this.getContentAndSummary(data);
+    data.user_id = this.userInfo.id;
+    data = this.getPostTime(data);
 
     let insertId = await this.modelInstance.addPost(data);
     return this.success({id: insertId});
@@ -60,13 +94,73 @@ export default class extends Base {
       return this.fail('PARAMS_ERROR');
     }
     let data = this.post();
+    /** 推送文章 **/
+    this.pushPost(data);
+
     data.id = this.id;
-    data = this.getContentAndSummary(data);
-    data = this.getPostTime(data);
-    data.tag = await this.getTagIds(data.tag);
+    if(data.markdown_content) {
+      data = this.getContentAndSummary(data);
+    }
+    if(data.create_time) {
+      data = this.getPostTime(data);
+    }
+    if(data.tag) {
+      data.tag = await this.getTagIds(data.tag);
+    }
 
     let rows = await this.modelInstance.savePost(data);
     return this.success({affectedRows: rows});
+  }
+
+  async deleteAction() {
+    if(!this.id) {
+      return this.fail('PARAMS_ERROR');
+    }
+
+    /** 如果不是管理员且不是本文作者则无权限删除文章 **/
+    if(this.userInfo.type !== 1) {
+      let post = this.modelInstance.where({id}).find();
+      if( post.user_id !== this.userInfo.id ) {
+        return this.fail('ACCESS_ERROR');
+      }
+    }
+
+    await this.modelInstance.deletePost(this.id);
+    return this.success();
+  }
+
+  async pushPost(post) {
+    if( post.status != 3 && data.is_public != 1 && data.push_sites.length == 0 ) {
+      return;
+    }
+
+    post = think.extend({}, post);
+    post.options = JSON.parse(post.options);
+
+    let options = await this.model('options').getOptions();
+    let push_sites = options.push_sites;
+    let push_sites_keys = post.options.push_sites;
+    let passwordHash = new PasswordHash();
+
+    if( post.markdown_content.slice(0, 5) !== '> 原文：') {
+      let options = await this.model('options').getOptions();
+      let site_url = options.hasOwnProperty('site_url') ? options.site_url : `http://${http.host}`;
+      post.markdown_content = `> 原文：${site_url}/post/${post.pathname}
+
+${post.markdown_content}`;
+    }
+
+    async function push(post, {appKey, appSecret, url}) {
+      let auth_key = passwordHash.hashPassword(`${appSecret}${post.markdown_content}`);
+      Object.assign(post, {app_key:appKey, auth_key});
+      request.post({url: url + '/admin/post_push', form: post});
+    }
+
+    delete post.cate;
+    delete post.options;
+    if(!Array.isArray(push_sites_keys)) { push_sites_keys = [push_sites_keys]; }
+    let pushes = push_sites_keys.map(key => push(post, push_sites[key]));
+    await Promise.all(pushes);
   }
 
   async lastest() {
@@ -76,8 +170,11 @@ export default class extends Base {
 
   getPostTime(data) {
     data.update_time = think.datetime();
-    if( !!data.create_time ) {
-      data.create_time = data.update_time;
+    /**草稿可以没有创建时间**/
+    if( !data.create_time ) {
+      data.create_time = data.status != 0 ? data.update_time : null;
+    }else{
+      data.create_time = think.datetime(data.create_time);
     }
     return data;
   }
@@ -130,9 +227,9 @@ export default class extends Base {
       }
       return `<h${b} id="${this.generateTocName(c)}"><a class="anchor" href="#${this.generateTocName(c)}"></a>${c}</h${b}>`;
     });
-    markedContent = markedContent.replace(/<h(\d)[^<>]*>([^<>]+)<\/h\1>/, (a, b, c) => {
-      return `${a}<div class="toc">${tocContent}</div>`;
-    });
+    // markedContent = markedContent.replace(/<h(\d)[^<>]*>([^<>]+)<\/h\1>/, (a, b, c) => {
+    //   return `${a}<div class="toc">${tocContent}</div>`;
+    // });
 
     let highlightContent = markedContent.replace(/<pre><code\s*(?:class="lang-(\w+)")?>([\s\S]+?)<\/code><\/pre>/mg, (a, language, text) => {
       text = text.replace(/&#39;/g, '"').replace(/&gt;/g, '>').replace(/&lt;/g, '<').replace(/\&quot;/g, '"').replace(/\&amp;/g, "&");
@@ -142,4 +239,5 @@ export default class extends Base {
 
     return highlightContent;
   }
+
 }

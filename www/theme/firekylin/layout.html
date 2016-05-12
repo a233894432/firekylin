@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no">
-  <link rel="icon" href="{{options.logo_url |default('/static/img/firekylin.jpg')}}">
+  <link rel="icon" href="{{options.favicon_url |default('/static/img/firekylin.jpg')}}">
   {% if options.favicon %}
   <link rel="shortcut icon" href="{{options.favicon}}" type="image/x-icon">
   {% endif %}
@@ -25,32 +25,32 @@
       </div>
       <ul class="buttons">
           <li>
-              <a class="" href="/">
-                  <i class="iconfont icon-home" title="首页"></i>
+              <a class="" href="/" title="首页">
+                  <i class="iconfont icon-home"></i>
                   <span>首页</span>
               </a>
           </li>
           <li>
-              <a class="" href="/archives/">
-                  <i class="iconfont icon-archive" title="归档"></i>
+              <a class="" href="/archives/" title="归档">
+                  <i class="iconfont icon-archive"></i>
                   <span>归档</span>
               </a>
           </li>
           <li>
-              <a class="" href="/tags/">
-                  <i class="iconfont icon-tags" title="标签"></i>
+              <a class="" href="/tags/" title="标签">
+                  <i class="iconfont icon-tags"></i>
                   <span>标签</span>
               </a>
           </li>
           <li>
-              <a class="" href="/about/">
-                  <i class="iconfont icon-user" title="关于"></i>
+              <a class="" href="/about/" title="关于">
+                  <i class="iconfont icon-user"></i>
                   <span>关于</span>
               </a>
           </li>
           <li>
-              <a class="" href="/links/">
-                  <i class="iconfont icon-link" title="友链"></i>
+              <a class="" href="/links/" title="友情链接">
+                  <i class="iconfont icon-link"></i>
                   <span>友链</span>
               </a>
           </li>
@@ -59,13 +59,13 @@
         <li>
           {% if options.github_url %}
           <a class="inline" target="_blank" href="{{options.github_url}}">
-            <i class="iconfont icon-github" title="GitHub"></i>
+            <i class="iconfont icon-github-v" title="GitHub"></i>
           </a>
           {% endif %}
           {% if options.twitter_url %}
             {% if options.twitter_url.indexOf('twitter.com') > -1 %}
             <a class="inline" target="_blank" href="{{options.twitter_url}}">
-              <i class="iconfont icon-twitter" title="Twitter"></i>
+              <i class="iconfont icon-twitter-v" title="Twitter"></i>
             </a>
             {% endif %}
             {% if options.twitter_url.indexOf('weibo.com') > -1 %}
@@ -75,7 +75,7 @@
             {% endif %}
           {% endif %}
           <a class="inline" href="/rss.html">
-            <i class="iconfont icon-rss" title="RSS"></i>
+            <i class="iconfont icon-rss-v" title="RSS"></i>
           </a>
           <a class="inline" href="/search.html">
             <i class="iconfont icon-search" title="Search"></i>
@@ -102,8 +102,7 @@
     &nbsp;-&nbsp;<a href="/">{{http.hostname}}</a>
   {% endif %}
   <br />
-  Powered by&nbsp;<a target="_blank" href="https://thinkjs.org">ThinkJS</a>
-  &nbsp;&amp;&nbsp;<a target="_blank" rel="nofollow" class="external" href="https://github.com/75team/firekylin">FireKylin</a>
+  Powered by&nbsp;<a target="_blank" href="https://thinkjs.org">ThinkJS</a>&nbsp;&amp;&nbsp;<a target="_blank" rel="nofollow" class="external" href="https://github.com/75team/firekylin">FireKylin</a>
 </footer>
 </div>
 <script src="/theme/firekylin/res/js/firekylin.js" data-ls="js_firekylin"></script>

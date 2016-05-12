@@ -87,7 +87,7 @@ ul,ol{padding:0;list-style:none;}
 .mod-user li a{padding: 0}
 
 /*fk-side start*/
-.fk-side{position:fixed;top:0; z-index:16;display:block;overflow:hidden; width:235px;height:100%;background:#323232;}
+.fk-side{position:fixed;top:0; z-index:16;display:block;overflow-x:hidden; overflow-y: auto; width:235px;height:100%;background:#323232;}
 .fk-side .mod-logo{padding:10px 10px 10px 25px;height:55px;}
 .ps-scrollbar-y-rail{margin-top: 50px;}
 .fk-side .mod-message{padding:8px 5px 0 10px;height:55px;background:#3f3f3f;}
@@ -129,6 +129,8 @@ ul,ol{padding:0;list-style:none;}
 .fk-footer{clear:both;overflow:hidden;margin:-40px 0 0 225px;height:50px;background:#efefef;text-align:center;line-height:52px;}
 .fk-footer.active{margin-left: 0;}
 .fk-footer p{font-size:12px;}
+
+
 
 /*右侧公共部分*/
 .fk-content-wrap .mod-symbol{margin-left:-2px;padding:0;width:2px;text-align:center;font-size:22px;line-height:35px;}
@@ -203,6 +205,36 @@ textarea{resize:none;}
 .fk-question-list li,.fk-article-list li{overflow: hidden;margin-bottom: 5px;}
 .fk-article-list a,.fk-question-list a{display:block;max-width:600px;}
 
+/*右侧搜索*/
+.fk-search{
+	height: 30px;
+	width: 275px;
+	border: 1px solid #c8c8d5;
+  border-radius: 4px;
+  padding: 4px;
+  margin-bottom: 10px;
+  position: absolute;
+	right: 20px;
+}
+.fk-search-input{
+	width: 100%;
+	padding: 0;
+	border: none;
+}
+.fk-search-btn{
+    border: none;
+    height: 28px;
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 40px;
+}
+.fk-search-btn:before{
+	position: absolute;
+	top: 7px;
+	left: 10px;
+	content: "\e604";
+}
 
 /*.chat-symbol{padding:0;line-height:34px;}
 .fk-wechat-dropdown-box{position:relative;width:230px;height:34px;line-height:34px;}
